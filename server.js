@@ -19,12 +19,8 @@ app.use((req, res, next) => {
 // Health check
 app.get("/", (req, res) => res.send("OK"));
 
-// --- MongoDB Atlas Connection ---
-// Prefer loading the connection string from an environment variable for security.
-// You can set MONGO_URI in a .env file or your environment. The fallback here uses the
-// `darling` database so that a named DB is created instead of `admin` when running locally
-// without MONGO_URI set. In production remove the fallback and use environment variables.
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://pestcontrollsystem:pestcontrollsystem@cluster0.nilkiuy.mongodb.net/darling?retryWrites=true&w=majority";
+
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://pestcontrollsystem:pestcontrollsystem@ac-gjup16o-shard-00-00.nilkiuy.mongodb.net/darling?retryWrites=true&w=majority";
 
 // The MongoDB Node driver v4+ ignores useNewUrlParser/useUnifiedTopology; passing them
 // causes deprecation warnings. Call mongoose.connect with the URI only and handle errors.
@@ -36,9 +32,7 @@ mongoose.connect(MONGO_URI)
     const Pest = require("./models/pest");
     const Recommendation = require("./models/recommendation");
 
-    // Ensure collections exist on startup. Atlas/MongoDB will not create the database or
-    // collections until data is written or createCollection is called. This routine tries
-    // to create the collections if they're missing, and falls back to inserting a dummy
+
     // document if createCollection is not permitted.
     async function ensureCollections() {
       const db = mongoose.connection.db;
