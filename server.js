@@ -13,7 +13,7 @@ app.use(express.json());
 // Prefer loading the connection string from an environment variable for security.
 // You can set MONGO_URI in a .env file or your environment. A hard-coded fallback is kept
 // to avoid breaking existing runs, but it's recommended to remove the fallback in production.
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://pestcontrollsystem:OGsl4D8ugkou2tFY@cluster0.nilkiuy.mongodb.net/admin?retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://pestcontrollsystem:pestcontrollsystem@cluster0.nilkiuy.mongodb.net/admin?retryWrites=true&w=majority";
 
 // The MongoDB Node driver v4+ ignores useNewUrlParser/useUnifiedTopology; passing them
 // causes deprecation warnings. Call mongoose.connect with the URI only and handle errors.
