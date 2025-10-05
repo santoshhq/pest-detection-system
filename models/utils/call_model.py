@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 import os
 import warnings
-import requests
 
 # suppress non-fatal UserWarnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -15,6 +14,13 @@ import timm
 from PIL import Image
 from torchvision import transforms
 
+# --- New dependency for Google Drive download ---
+try:
+    import gdown
+except ImportError:
+    os.system("pip install gdown")
+    import gdown
+
 # --- Configuration ---
 HERE = Path(__file__).parent
 ROOT = HERE.parent
@@ -24,15 +30,45 @@ MODEL_PATH = MODEL_DIR / "convnext_pestopia_LLRD_best.pt"
 IMG_SIZE = 224
 NUM_CLASSES = 132
 
-# Google Drive direct download link (replace with your actual link)
-GDRIVE_FILE_ID = "1_f2RHYwA9zA6RzUoHR5Ir3_P5pO3eMy5"  # extract from your Drive share link
-GDRIVE_URL = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
+# Google Drive direct download link
+GDRIVE_FILE_ID = "1_f2RHYwA9zA6RzUoHR5Ir3_P5pO3eMy5"
+GDRIVE_URL = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
 
-# Full class list (simplified here for brevity)
+# Full class list (simplified for brevity)
 CLASS_NAMES = [
-    'Adristyrannus', 'Aleurocanthus spiniferus', 'Ampelophaga', 'Aphis citricola Vander Goot', 'Apolygus lucorum', 'Bactrocera tsuneonis', 'Beet spot flies', 'Black hairy', 'Brevipoalpus lewisi McGregor', 'Ceroplastes rubens', 'Chlumetia transversa', 'Chrysomphalus aonidum', 'Cicadella viridis', 'Cicadellidae', 'Colomerus vitis', 'Dacus dorsalis(Hendel)', 'Dasineura sp', 'Deporaus marginatus Pascoe', 'Erythroneura apicalis', 'Field Cricket', 'Fruit piercing moth', 'Gall fly', 'Icerya purchasi Maskell', 'Indigo caterpillar', 'Jute Stem Weevil', 'Jute aphid', 'Jute hairy', 'Jute red mite', 'Jute semilooper', 'Jute stem girdler', 'Jute stick insect', 'Lawana imitata Melichar', 'Leaf beetle', 'Limacodidae', 'Locust', 'Locustoidea', 'Lycorma delicatula', 'Mango flat beak leafhopper', 'Mealybug', 'Miridae', 'Nipaecoccus vastalor', 'Panonchus citri McGregor', 'Papilio xuthus', 'Parlatoria zizyphus Lucus', 'Phyllocnistis citrella Stainton', 'Phyllocoptes oleiverus ashmead', 'Pieris canidia', 'Pod borer', 'Polyphagotars onemus latus', 'Potosiabre vitarsis', 'Prodenia litura', 'Pseudococcus comstocki Kuwana', 'Rhytidodera bowrinii white', 'Rice Stemfly', 'Salurnis marginella Guerr', 'Scirtothrips dorsalis Hood', 'Spilosoma Obliqua', 'Sternochetus frigidus', 'Termite', 'Termite odontotermes (Rambur)', 'Tetradacus c Bactrocera minax', 'Thrips', 'Toxoptera aurantii', 'Toxoptera citricidus', 'Trialeurodes vaporariorum', 'Unaspis yanonensis', 'Viteus vitifoliae', 'Xylotrechus', 'Yellow Mite', 'alfalfa plant bug', 'alfalfa seed chalcid', 'alfalfa weevil', 'aphids', 'army worm', 'asiatic rice borer', 'beet army worm', 'beet fly', 'beet weevil', 'beetle', 'bird cherry-oataphid', 'black cutworm', 'blister beetle', 'bollworm', 'brown plant hopper', 'cabbage army worm', 'cerodonta denticornis', 'corn borer', 'corn earworm', 'cutworm', 'english grain aphid', 'fall armyworm', 'flax budworm', 'flea beetle', 'grain spreader thrips', 'grasshopper', 'green bug', 'grub', 'large cutworm', 'legume blister beetle', 'longlegged spider mite', 'lytta polita', 'meadow moth', 'mites', 'mole cricket', 'odontothrips loti', 'oides decempunctata', 'paddy stem maggot', 'parathrene regalis', 'peach borer', 'penthaleus major', 'red spider', 'rice gall midge', 'rice leaf caterpillar', 'rice leaf roller', 'rice leafhopper', 'rice shell pest', 'rice water weevil', 'sawfly', 'sericaorient alismots chulsky', 'small brown plant hopper', 'stem borer', 'tarnished plant bug', 'therioaphis maculata Buckton', 'wheat blossom midge', 'wheat phloeothrips', 'wheat sawfly', 'white backed plant hopper', 'white margined moth', 'whitefly', 'wireworm', 'yellow cutworm', 'yellow rice borer'
+    'Adristyrannus', 'Aleurocanthus spiniferus', 'Ampelophaga', 'Aphis citricola Vander Goot',
+    'Apolygus lucorum', 'Bactrocera tsuneonis', 'Beet spot flies', 'Black hairy',
+    'Brevipoalpus lewisi McGregor', 'Ceroplastes rubens', 'Chlumetia transversa',
+    'Chrysomphalus aonidum', 'Cicadella viridis', 'Cicadellidae', 'Colomerus vitis',
+    'Dacus dorsalis(Hendel)', 'Dasineura sp', 'Deporaus marginatus Pascoe',
+    'Erythroneura apicalis', 'Field Cricket', 'Fruit piercing moth', 'Gall fly',
+    'Icerya purchasi Maskell', 'Indigo caterpillar', 'Jute Stem Weevil', 'Jute aphid',
+    'Jute hairy', 'Jute red mite', 'Jute semilooper', 'Jute stem girdler', 'Jute stick insect',
+    'Lawana imitata Melichar', 'Leaf beetle', 'Limacodidae', 'Locust', 'Locustoidea',
+    'Lycorma delicatula', 'Mango flat beak leafhopper', 'Mealybug', 'Miridae',
+    'Nipaecoccus vastalor', 'Panonchus citri McGregor', 'Papilio xuthus',
+    'Parlatoria zizyphus Lucus', 'Phyllocnistis citrella Stainton', 'Phyllocoptes oleiverus ashmead',
+    'Pieris canidia', 'Pod borer', 'Polyphagotars onemus latus', 'Potosiabre vitarsis',
+    'Prodenia litura', 'Pseudococcus comstocki Kuwana', 'Rhytidodera bowrinii white',
+    'Rice Stemfly', 'Salurnis marginella Guerr', 'Scirtothrips dorsalis Hood',
+    'Spilosoma Obliqua', 'Sternochetus frigidus', 'Termite', 'Termite odontotermes (Rambur)',
+    'Tetradacus c Bactrocera minax', 'Thrips', 'Toxoptera aurantii', 'Toxoptera citricidus',
+    'Trialeurodes vaporariorum', 'Unaspis yanonensis', 'Viteus vitifoliae', 'Xylotrechus',
+    'Yellow Mite', 'alfalfa plant bug', 'alfalfa seed chalcid', 'alfalfa weevil', 'aphids',
+    'army worm', 'asiatic rice borer', 'beet army worm', 'beet fly', 'beet weevil', 'beetle',
+    'bird cherry-oataphid', 'black cutworm', 'blister beetle', 'bollworm', 'brown plant hopper',
+    'cabbage army worm', 'cerodonta denticornis', 'corn borer', 'corn earworm', 'cutworm',
+    'english grain aphid', 'fall armyworm', 'flax budworm', 'flea beetle', 'grain spreader thrips',
+    'grasshopper', 'green bug', 'grub', 'large cutworm', 'legume blister beetle',
+    'longlegged spider mite', 'lytta polita', 'meadow moth', 'mites', 'mole cricket',
+    'odontothrips loti', 'oides decempunctata', 'paddy stem maggot', 'parathrene regalis',
+    'peach borer', 'penthaleus major', 'red spider', 'rice gall midge', 'rice leaf caterpillar',
+    'rice leaf roller', 'rice leafhopper', 'rice shell pest', 'rice water weevil', 'sawfly',
+    'sericaorient alismots chulsky', 'small brown plant hopper', 'stem borer',
+    'tarnished plant bug', 'therioaphis maculata Buckton', 'wheat blossom midge',
+    'wheat phloeothrips', 'wheat sawfly', 'white backed plant hopper', 'white margined moth',
+    'whitefly', 'wireworm', 'yellow cutworm', 'yellow rice borer'
 ]
-
 
 # Lazy-load model
 _model = None
@@ -48,15 +84,13 @@ if os.getenv("DUMMY_PREDICT") == "1":
     sys.exit(0)
 
 def download_model():
-    """Download model from Google Drive if it doesn't exist."""
+    """Download model from Google Drive using gdown."""
     if MODEL_PATH.exists():
         return
-    print("Downloading model from Google Drive...")
-    with requests.get(GDRIVE_URL, stream=True) as r:
-        r.raise_for_status()
-        with open(MODEL_PATH, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+    print("Downloading model from Google Drive using gdown...")
+    gdown.download(GDRIVE_URL, str(MODEL_PATH), quiet=False)
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError("Model download failed!")
     print("Model downloaded successfully!")
 
 def load_model():

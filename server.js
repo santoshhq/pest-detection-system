@@ -16,7 +16,7 @@ app.use(express.json());
 // NOTE: Using the 'admin' database in the connection string can cause "not authorized on admin"
 // errors if the Atlas user doesn't have admin DB privileges. Use a dedicated application DB
 // (for example: 'pestdb') or set a proper MONGO_URI via environment variables.
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://pestcontrollsystem:pestcontrollsystem@cluster0.nilkiuy.mongodb.net/pestdb?retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://pestcontrollsystem:pestcontrollsystem@cluster0.nilkiuy.mongodb.net/pest_system_db?retryWrites=true&w=majority";
 
 // The MongoDB Node driver v4+ ignores useNewUrlParser/useUnifiedTopology; passing them
 // causes deprecation warnings. Call mongoose.connect with the URI only and handle errors.
