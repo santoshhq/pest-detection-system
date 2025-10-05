@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-
+const authRoute = require("./routes/auth");
 const predictRoute = require("./routes/predict");
 const pestRoute = require("./routes/pest");
 
@@ -30,5 +30,5 @@ mongoose.connect(MONGO_URI)
 // --- Routes ---
 app.use("/predict", predictRoute);
 app.use("/pest", pestRoute);
-
+app.use("/auth", authRoute);
 app.listen(5000, () => console.log("🚀 Server running on port 5000"));
